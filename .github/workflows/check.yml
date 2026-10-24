@@ -16,12 +16,14 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: tests/package-lock.json
-      # The runner image ships licenses (e.g. Google TV add-on) the action cannot accept on its own.
-      - uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: false
-      - run: yes | sdkmanager --licenses > /dev/null
-      - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+      # The runner image already has the Android SDK (ANDROID_HOME); setup-android now fails on it
+      # (it asks for the removed 'tools' package and the Google TV add-on license).
+      - name: Android SDK
+        run: |
+          echo "$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin | sort -V | tail -1)" >> "$GITHUB_PATH"
+          SDKM="$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin | sort -V | tail -1)/sdkmanager"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" 'platforms;android-34' 'build-tools;34.0.0'
       - run: node --check app/src/main/assets/www/app.js
       - run: node tests/catalog.test.cjs
       - run: node --test tests/ports.test.cjs
