@@ -1,0 +1,6 @@
+{
+  "name": "home-tv-ui-checks",
+  "private": true,
+  "scripts": { "test": "node catalog.test.cjs && node browser.cjs" },
+  "devDependencies": { "playwright": "1.64.1" }
+}

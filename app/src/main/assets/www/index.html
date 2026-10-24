@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920, user-scalable=no">
+<title>Home TV</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage">
+
+  <!-- fundo ambiente: a capa desfocada de verdade (num canvas fora da tela, uma vez por troca) vira a
+       imagem de fundo desta div. Fica na camada principal: nenhuma camada extra de tela cheia para o GPU. -->
+  <div class="amb" id="amb"></div>
+
+  <!-- ============ HOME ============ -->
+  <main id="home">
+    <header class="top">
+      <h1>Para você</h1>
+      <nav class="tabs glass" aria-label="Seções">
+        <button class="tab on" data-tab="all">Explorar</button>
+        <button class="tab" data-tab="movie">Filmes</button>
+        <button class="tab" data-tab="tv">Séries</button>
+      </nav>
+      <div class="top-right">
+        <button class="round glass" id="btnFavorites" aria-label="Minha lista de favoritos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>
+        </button>
+        <div class="pill glass"><span class="wx-ico" id="wxIcoTop"></span><span id="wxTop">--°</span></div>
+        <div class="clock" id="clockTop">--:--</div>
+        <button class="round glass" id="btnPanel" aria-label="Painel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+        </button>
+        <button class="round glass" id="btnSettings" aria-label="Configurações do Fire TV">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- destaques: o card grande fica fixo e troca o conteúdo (capa já decodificada); os pôsteres
+         ao lado deslizam só com transform. Nada muda de tamanho, então não há relayout (60 fps). -->
+    <section class="picks" aria-label="Em alta nos seus apps">
+      <div class="hero" id="hero">
+        <img class="hbd" id="hImg" alt="">
+        <div class="shade"></div>
+        <div class="body" id="hBody">
+          <span class="badge glass" id="hBadge">Em alta</span>
+          <p class="ov" id="hOv"></p>
+          <div class="acts">
+            <button class="gbtn glass" id="hInfo"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg><span id="hInfoTxt">Detalhes</span></button>
+          </div>
+        </div>
+        <div class="off-box" id="hOff">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 8.5a15 15 0 0 1 6.5-3.6M13 4.6A15 15 0 0 1 22 8.5M5 12a10.5 10.5 0 0 1 4.2-2.3M16.4 10.5A10.5 10.5 0 0 1 19 12M8.5 15.5a5.5 5.5 0 0 1 7 0M3 3l18 18"/><circle cx="12" cy="19" r="1"/></svg>
+          <div class="t">Sem conexão</div>
+          <div class="d">Os destaques voltam quando a internet voltar. Seus apps continuam funcionando normalmente.</div>
+          <button class="gbtn glass" id="hRetry">Tentar de novo</button>
+        </div>
+      </div>
+      <div class="hcap"><div class="t" id="hTitle"></div><div class="m" id="hMeta"></div></div>
+      <div class="posters"><div class="ptrack" id="ptrack"></div></div>
+    </section>
+    <div class="pfade"></div>
+
+    <!-- gaveta "Outros apps": abre ao passar um app pelo card "Todos" (ou segurando OK no "Todos") -->
+    <section class="sheet glass" id="sheet" aria-label="Outros apps">
+      <div class="sh-head"><span class="t">Outros apps</span><span class="h" id="sheetHint"></span></div>
+      <div class="sclip"><div class="dtrack" id="sheetTrack"></div></div>
+      <div class="dfade l" id="sfadeL"></div>
+      <div class="dfade r" id="sfadeR"></div>
+    </section>
+
+    <section class="shelf glass" aria-label="Seus apps">
+      <div class="dclip"><div class="dtrack" id="dock"></div></div>
+      <div class="dfade l" id="dfadeL"></div>
+      <div class="dfade r" id="dfadeR"></div>
+    </section>
+
+    <div class="foot">
+      <span id="footHint"></span>
+    </div>
+    <div id="catalogRows" aria-label="Descobrir filmes e séries"></div>
+  </main>
+
+  <!-- ============ PAINEL LATERAL ============ -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer glass" id="drawer" aria-label="Painel">
+    <div class="d-clock">
+      <div class="big" id="clockBig">--:--</div>
+      <div class="date" id="dateBig"></div>
+    </div>
+
+    <div class="card glass">
+      <div class="wx-now">
+        <div class="wx-left"><span class="wx-ico lg" id="wxIcoBig"></span><span class="wx-temp" id="wxTemp">--°</span></div>
+        <div class="wx-right"><div class="wx-city" id="wxCity"></div><div class="wx-desc" id="wxDesc"></div></div>
+      </div>
+      <div class="hours" id="hours"></div>
+      <div class="sun" id="sunRow"></div>
+    </div>
+
+    <div class="coins glass" id="coinsBox"></div>
+
+    <div class="actions">
+      <button class="dbtn glass" id="btnRedirect"><span id="redirectTxt">Botão Home abre esta tela</span><span class="sw" id="swRedirect"><span></span></span></button>
+      <button class="dbtn glass" id="btnVisual"><span>Visual</span><span class="val-pill" id="visualTxt">Vidro</span></button>
+      <button class="dbtn glass" id="btnSounds" aria-pressed="true"><span>Sons da interface</span><span class="val-pill" id="soundsTxt">Ligados</span></button>
+      <button class="dbtn glass" id="btnIntro" aria-pressed="true"><span>Abertura ao ligar a TV</span><span class="val-pill" id="introTxt">Ligada</span></button>
+      <button class="dbtn glass" id="btnSys"><span>Configurações do Fire TV</span><span class="chev">›</span></button>
+      <button class="dbtn glass" id="btnCatalog"><span>Catálogo e chaves</span><span class="chev">›</span></button>
+      <button class="dbtn glass danger" id="btnRestore"><span>Restaurar tela original do Fire TV</span><span class="chev">›</span></button>
+      <div class="status" id="homeStatus"></div>
+    </div>
+  </aside>
+
+  <!-- ============ TODOS OS APPS ============ -->
+  <section class="screen" id="allApps" aria-label="Todos os apps">
+    <div class="s-amb" id="allAmb"></div>
+    <div class="s-shade"></div>
+    <div class="s-body">
+      <header class="s-head">
+        <div><h2>Todos os apps</h2><div class="sub" id="allCount"></div></div>
+        <div class="clock" id="clockAll">--:--</div>
+      </header>
+      <div class="grid" id="allGrid"></div>
+      <div class="s-foot"><span>OK abre o app · Voltar retorna à Home</span><span id="allFocus"></span></div>
+    </div>
+  </section>
+
+  <!-- ============ CONFIGURAÇÕES DO FIRE TV ============ -->
+  <section class="screen" id="setsPanel" aria-label="Configurações do Fire TV">
+    <div class="s-amb sets-amb"></div>
+    <div class="s-body">
+      <header class="s-head">
+        <div><h2>Configurações</h2><div class="sub">Atalhos para as configurações do Fire TV</div></div>
+        <div class="clock" id="clockSets">--:--</div>
+      </header>
+      <div class="sets-grid" id="setsGrid"></div>
+      <div class="s-note">Tela e sons, Preferências, Acessibilidade, Conta e Alexa ficam em Todas as configurações.</div>
+    </div>
+  </section>
+
+  <section class="screen" id="catalogBrowser" aria-label="Catálogo">
+    <!-- Vidro: fundo com a capa desfocada do título em foco (como na Home); Sólido: fundo liso -->
+    <div class="s-amb amb-img" id="catAmb"></div>
+    <div class="cat-shade"></div>
+    <div class="s-body">
+      <header class="s-head"><div><h2 id="catalogTitle">Catálogo</h2><div class="sub" id="catalogMessage"></div></div><div class="catalog-head-tools"><span class="catalog-position" id="catalogPosition"></span><button class="gbtn glass" id="catalogBack"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>Voltar</button></div></header>
+      <div class="catalog-filters" id="catalogFilters">
+        <button class="gbtn glass" id="catalogType">Tipo: ambos</button>
+        <button class="gbtn glass" id="catalogGenre">Gênero: todos</button>
+        <button class="gbtn glass" id="catalogSort">Ordem: mais recomendados</button>
+        <button class="gbtn glass" id="catalogCollection">Lista: descobrir</button>
+        <button class="gbtn glass" id="catalogYear">Ano: todos</button>
+        <button class="gbtn glass" id="catalogStatus">Situação: todas</button>
+        <input id="catalogSearch" type="search" maxlength="160" placeholder="Buscar título em português" aria-label="Buscar título">
+        <button class="gbtn glass" id="catalogFind" aria-label="Buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg></button>
+      </div>
+      <div class="catalog-grid" id="catalogGrid"></div>
+      <div class="catalog-pages"><button class="gbtn glass" id="catalogPrevious">Anterior</button><span id="catalogPage"></span><button class="gbtn glass" id="catalogNext">Próxima</button></div>
+    </div>
+  </section>
+
+  <section class="screen" id="seasonBrowser" aria-label="Temporadas e episódios">
+    <div class="s-body"><header class="s-head"><div><h2 id="seasonTitle">Temporadas</h2><div class="sub" id="seasonMessage"></div></div><button class="gbtn glass" id="seasonBack">Voltar</button></header>
+      <div class="season-tabs" id="seasonTabs"></div><div class="episode-list" id="episodeList"></div>
+    </div>
+  </section>
+
+  <!-- ============ DETALHES DO TÍTULO ============ -->
+  <section class="screen" id="details" aria-label="Detalhes do título">
+    <div class="s-amb amb-img" id="dAmb"></div>
+    <div class="d-band"><img id="dBand" alt=""></div>
+    <div class="d-band-shade"></div>
+    <div class="d-back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Voltar para a Home</div>
+    <div class="d-title">
+      <h2 id="dTitle"></h2>
+      <div class="orig" id="dOrig"></div>
+      <div class="meta" id="dMeta"></div>
+    </div>
+    <div class="d-rates" id="dRates"></div>
+    <div class="d-main glass">
+      <div class="d-content" tabindex="0" data-scroll aria-label="Sinopse e elenco. Use cima e baixo para ler.">
+      <p class="d-ov" id="dOv"></p>
+      <div class="d-cols">
+        <div class="d-info" id="dInfo"></div>
+        <div class="d-right">
+          <span class="lbl">Onde assistir</span>
+          <div class="d-prov" id="dProv"></div>
+          <span class="lbl" style="margin-top:12px">Elenco</span>
+          <div class="d-cast" id="dCast"></div>
+        </div>
+      </div>
+      </div>
+      <div class="d-acts acts">
+        <button class="cta" id="dOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg><span id="dOpenTxt">Abrir</span></button>
+        <button class="gbtn glass" id="dTrailer">Trailer</button>
+        <button class="gbtn glass" id="dSeasons">Temporadas</button>
+        <button class="gbtn glass" id="dFav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg><span id="dFavTxt">Favoritar</span></button>
+      </div>
+    </div>
+    <aside class="d-side glass">
+      <div class="h">Mais como este</div>
+      <div class="d-sim" id="dSim"></div>
+      <div class="credit">Dados: TMDB · notas IMDb e Rotten Tomatoes via MDBList · onde assistir: JustWatch</div>
+    </aside>
+  </section>
+
+  <div class="toast glass" id="toast" role="status">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+    <span id="toastTxt"></span>
+  </div>
+</div>
+<script src="config.js"></script>
+<script src="catalog.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

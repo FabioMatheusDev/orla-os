@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "android-tv": {
+      "name": "Android TV / Google TV",
+      "packageFormat": "apk",
+      "strategy": "adapt-existing-android-project",
+      "pending": ["generic-settings-intents", "manufacturer-home-selection", "safe-generic-home-restoration", "device-webview-and-keystore-validation", "remote-and-lifecycle-device-tests"]
+    },
+    "tizen": {
+      "name": "Samsung Tizen",
+      "packageFormat": "wgt",
+      "strategy": "shared-web-ui-with-platform-adapter",
+      "pending": ["async-platform-facade", "public-sdk-capability-audit", "secure-byok-storage", "https-cors-provider-transport", "persistent-cache-and-rate-policy", "remote-keyboard-and-lifecycle", "app-launching-where-permitted", "manifest-icons-certificates-and-packaging", "physical-device-validation"]
+    },
+    "webos": {
+      "name": "LG webOS",
+      "packageFormat": "ipk",
+      "strategy": "shared-web-ui-with-platform-adapter",
+      "pending": ["async-platform-facade", "public-luna-api-capability-audit", "secure-byok-storage", "https-cors-provider-transport", "persistent-cache-and-rate-policy", "dpad-magic-remote-keyboard-and-lifecycle", "app-launching-where-permitted", "appinfo-icons-and-packaging", "physical-device-validation"]
+    },
+    "vega": {
+      "name": "Fire TV Vega OS",
+      "packageFormat": "vpkg",
+      "strategy": "shared-web-ui-with-vega-shell",
+      "pending": ["supported-vega-webview-shell", "async-platform-facade", "secure-byok-storage", "https-provider-transport", "persistent-cache-and-rate-policy", "remote-keyboard-and-lifecycle", "public-sdk-app-launching-capabilities", "vega-project-manifest-signing-and-packaging", "physical-device-validation"]
+    }
+  }
+}

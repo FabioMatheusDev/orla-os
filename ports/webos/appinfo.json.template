@@ -1,0 +1,9 @@
+{
+  "id": "com.example.hometv.dev",
+  "version": "0.0.1",
+  "vendor": "REPLACE_WITH_YOUR_NAME",
+  "type": "web",
+  "main": "index.html",
+  "title": "Home TV — Development",
+  "icon": "icon.png"
+}

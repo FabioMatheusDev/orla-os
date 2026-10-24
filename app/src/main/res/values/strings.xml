@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Home TV</string>
+    <string name="service_label">Home TV · botão Home</string>
+    <string name="service_desc">Abre a tela inicial Home TV quando a tela inicial da Amazon aparece. Não lê nem coleta conteúdo da tela.</string>
+</resources>

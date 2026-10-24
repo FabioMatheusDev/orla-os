@@ -1,43 +1,32 @@
-# Builds everything and checks the catalogues on every pull request and push to main, with tools/check.sh: the same
-# script contributors run before pushing, so a PR shows whether it still builds before anyone tries it on a TV.
-name: Check
-
-on:
-  pull_request:
-  push:
-    branches: [main]
-
+﻿name: Home TV checks
+on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
-
-# A new push to a PR cancels the run for the push before it (on main, every merge keeps its own run).
-concurrency:
-  group: check-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 jobs:
-  android:
-    name: Google TV app
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      # The JDK and SDK the README asks for, not whatever the runner image has (build.sh takes the newest it finds,
-      # so a newer android.jar would let through a call that breaks everyone's build).
-      - uses: actions/setup-java@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
-      - name: Android SDK (build-tools 34, android-34)
-        run: |
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$RUNNER_TEMP/sdk" \
-            "build-tools;34.0.0" "platforms;android-34" > /dev/null
-          echo "ANDROID_HOME=$RUNNER_TEMP/sdk" >> "$GITHUB_ENV"
-      # build.sh makes a throwaway config.properties and signing key: no secrets needed.
-      - run: tools/check.sh android
-
-  web:
-    name: Translations, LG and Samsung
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - run: tools/check.sh web
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+      - run: node --check app/src/main/assets/www/app.js
+      - run: node tests/catalog.test.cjs
+      - run: node --test tests/ports.test.cjs
+      - run: chmod +x gradlew && ./gradlew --no-daemon assembleDebug
+      - run: python3 scripts/verify-apk.py
+      - run: javac -encoding UTF-8 -d app/build/policy-check app/src/main/java/com/tvhome/launcher/CatalogPolicy.java tests/CatalogPolicyTest.java
+      - run: java -cp app/build/policy-check com.tvhome.launcher.CatalogPolicyTest
+      - run: javac -d app/build/policy-check app/src/main/java/com/tvhome/launcher/HomeWindowPolicy.java tests/HomeWindowPolicyTest.java
+      - run: java -cp app/build/policy-check com.tvhome.launcher.HomeWindowPolicyTest
+      - run: npm ci --prefix tests
+      - run: npx --prefix tests playwright install --with-deps chrome
+      - run: node tests/browser.cjs

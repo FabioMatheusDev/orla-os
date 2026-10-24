@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>orla · abertura</title>
+<!-- Film for the orla intro (motion/RULES.md): window.seek(t) paints frame t; no transitions,
+     timers or state between frames. Rendered by render.mjs at 1920×1080 CSS × 2 = 3840×2160. -->
+<style>
+@font-face { font-family: Inter; src: url(../app/src/main/assets/www/fonts/InterVariable.ttf) format('truetype'); font-weight: 100 900; font-display: block; }
+html, body { margin: 0; background: #000; overflow: hidden; }
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+#glow { position: absolute; inset: 0; background: radial-gradient(36% 6% at 50% 45.9%, rgba(143,199,255,0.42) 0%, rgba(143,199,255,0) 100%), radial-gradient(60% 22% at 50% 47%, rgba(95,168,245,0.12) 0%, rgba(7,9,12,0) 100%); opacity: 0; }
+.head { position: absolute; width: 150px; height: 34px; margin: -17px 0 0 -75px; border-radius: 50%; background: radial-gradient(closest-side, #FFFFFF 0%, rgba(201,228,255,0.85) 35%, rgba(143,199,255,0) 100%); opacity: 0; }
+#spark { position: absolute; width: 160px; height: 18px; margin: -9px 0 0 -80px; border-radius: 50%; background: radial-gradient(closest-side, #FFFFFF 0%, rgba(143,199,255,0.8) 40%, rgba(143,199,255,0) 100%); opacity: 0; }
+#camera { position: absolute; inset: 0; transform-origin: 50% 52%; }
+.word { position: absolute; left: 0; top: 0; font: 800 300px/1 Inter, sans-serif; letter-spacing: -0.05em; white-space: nowrap; }
+#ref { visibility: hidden; }
+.l { position: absolute; top: 0; }
+.l span { position: absolute; left: 0; top: 0; }
+.o { color: transparent; -webkit-text-stroke: 2.5px #C9E4FF; }
+.f { background: linear-gradient(180deg, #FFFFFF 0%, #F2F4F6 45%, #BFDDFF 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.s { -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* mirrored around the baseline: the mask is opaque at the baseline (next to the horizon) and fades toward the letter tops */
+#reflection { -webkit-mask-image: linear-gradient(0deg, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0) 50%); mask-image: linear-gradient(0deg, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0) 50%); }
+#horizon { position: absolute; height: 3px; border-radius: 2px; background: linear-gradient(90deg, rgba(201,228,255,0) 0%, rgba(201,228,255,1) 50%, rgba(201,228,255,0) 100%); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+  <div id="camera">
+    <div id="horizon"></div>
+    <div class="head" id="headL"></div><div class="head" id="headR"></div><div id="spark"></div>
+    <div class="word" id="reflection"></div>
+    <div class="word" id="word"></div>
+  </div>
+  <div class="word" id="ref">orla<span id="base" style="display:inline-block;width:0;height:0"></span></div>
+</div>
+<script>
+'use strict';
+// ---- timing (from beats.json, injected by render.mjs; defaults keep the page openable) ----
+const B = window.BEATS || { duration: 5, cues: { start: 0.2, letters: 1.2, impact: 1.7, sweep: 2.7, exit: 4.2 } };
+const C = B.cues, IMPACT = (B.measured && B.measured.impact) || C.impact, DUR = B.duration;
+
+// ---- easing ----
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+function bezier(x1, y1, x2, y2) {           // CSS cubic-bezier, solved per call (pure)
+  return (x) => {
+    if (x <= 0) return 0; if (x >= 1) return 1;
+    let t = x;
+    for (let i = 0; i < 8; i++) {
+      const cx = 3 * (1 - t) * (1 - t) * t * x1 + 3 * (1 - t) * t * t * x2 + t * t * t - x;
+      const dx = 3 * (1 - t) * (1 - t) * x1 + 6 * (1 - t) * t * (x2 - x1) + 3 * t * t * (1 - x2);
+      if (Math.abs(cx) < 1e-6 || !dx) break; t -= cx / dx;
+    }
+    return 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t;
+  };
+}
+const settle = bezier(0.2, 0.8, 0.2, 1), draw = bezier(0.65, 0, 0.35, 1), leave = bezier(0.4, 0, 1, 1), inout = bezier(0.65, 0, 0.35, 1);
+// damped spring 0 → 1 with a small overshoot ("vidro que assenta")
+const spring = (t) => t <= 0 ? 0 : 1 - Math.exp(-t * 11) * Math.cos(t * 19);
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const lerp = (a, b, p) => a + (b - a) * p;
+const mix = (c1, c2, p) => 'rgb(' + c1.map((v, i) => Math.round(lerp(v, c2[i], p))).join(',') + ')';
+
+// ---- layout constants, measured once after the font loads (not frame state) ----
+const L = { x: [], w: 0, h: 0, base: 0, left: 0, top: 0, letters: [], refl: [] };
+function layout() {
+  const ref = document.getElementById('ref'), text = ref.firstChild, r0 = ref.getBoundingClientRect();
+  const range = document.createRange();
+  for (let i = 0; i < 4; i++) { range.setStart(text, i); range.setEnd(text, i + 1); L.x.push(range.getBoundingClientRect().left - r0.left); }
+  range.setStart(text, 0); range.setEnd(text, 4);
+  const rr = range.getBoundingClientRect();
+  L.w = rr.width; L.h = r0.height; L.base = document.getElementById('base').getBoundingClientRect().top - r0.top;
+  L.left = Math.round((1920 - L.w) / 2); L.top = Math.round(470 - L.base);     // baseline at y = 470
+  const make = (host, withOutline) => 'orla'.split('').map((ch, i) => {
+    const el = document.createElement('div'); el.className = 'l'; el.style.left = L.x[i] + 'px';
+    el.innerHTML = (withOutline ? '<span class="o">' + ch + '</span>' : '') + '<span class="f">' + ch + '</span>' + (withOutline ? '<span class="s">' + ch + '</span>' : '');
+    host.appendChild(el); return el;
+  });
+  const word = document.getElementById('word'), refl = document.getElementById('reflection');
+  word.style.left = refl.style.left = L.left + 'px'; word.style.top = L.top + 'px';
+  // the letters are absolutely placed: give the boxes the word's size so the reflection's mask has an area
+  [word, refl].forEach(el => { el.style.width = Math.ceil(L.w) + 'px'; el.style.height = Math.ceil(L.h) + 'px'; });
+  L.letters = make(word, true); L.refl = make(refl, false);
+  // the sweep band is one gradient across the whole word: each letter shows its own slice
+  L.letters.forEach((el, i) => { const s = el.lastChild; s.style.backgroundSize = L.w + 'px 100%'; s.style.backgroundPositionX = -L.x[i] + 'px'; });
+}
+
+// ---- the film: everything below is a pure function of t ----
+const HZ_FULL = 1500;
+// while the heads travel the line is thicker; it slims to 3 px as the letters arrive
+const headOnPre = (t) => t < C.start ? 0 : 1 - clamp((t - (C.letters - 0.1)) / 0.25);
+window.seek = function seek(t) {
+  t = clamp(t, 0, DUR);
+  const stage = document.getElementById('stage'), cam = document.getElementById('camera');
+  const glow = document.getElementById('glow'), hz = document.getElementById('horizon');
+  const word = document.getElementById('word'), refl = document.getElementById('reflection');
+
+  // background: pure black → the Home background (#07090C), reached by the impact
+  stage.style.background = mix([0, 0, 0], [7, 9, 12], settle(clamp(t / IMPACT)));
+
+  // exit 4.2 → 4.9: the word lifts away, the horizon opens and dims; the last frames are bare #07090C
+  const ex = leave(clamp((t - C.exit) / 0.7));
+
+  // camera: slow push all the way, plus a short seeded shake on the impact
+  const di = t - IMPACT;
+  let sx = 0, sy = 0;
+  if (di >= 0 && di < 0.3) { const r = mulberry32(Math.floor(di * 60) + 7), a = 7 * Math.exp(-di * 14); sx = (r() * 2 - 1) * a; sy = (r() * 2 - 1) * a; }
+  cam.style.transform = 'translate(' + sx.toFixed(2) + 'px,' + (sy - 26 * ex).toFixed(2) + 'px) scale(' + (1 + 0.04 * inout(clamp(t / C.exit)) + 0.03 * ex).toFixed(4) + ')';
+
+  // horizon: draws edge to edge (0.2 → 1.2), snaps to the word's width on the impact, opens on exit
+  const dr = draw(clamp((t - C.start) / (C.letters - C.start)));
+  const sn = di >= 0 ? spring(di) : 0;
+  const target = (L.w + 120) / HZ_FULL;
+  const scale = dr * (1 + (target - 1) * sn) + ex * (1.15 - target);
+  const flare = di >= 0 ? 1 + 1.6 * Math.exp(-di * 9) : 1;
+  hz.style.width = HZ_FULL + 'px'; hz.style.left = (960 - HZ_FULL / 2) + 'px'; hz.style.top = (470 + 26) + 'px';
+  hz.style.height = (di >= 0 ? 3 * (1 + 0.7 * Math.exp(-di * 9)) : 3 + 2 * headOnPre(t)).toFixed(2) + 'px';
+  hz.style.transform = 'scaleX(' + Math.max(0, scale).toFixed(4) + ')';
+  hz.style.opacity = (dr > 0 ? Math.min(1, flare) : 0) * (1 - ex);
+  hz.style.filter = di >= 0 ? 'brightness(' + flare.toFixed(3) + ')' : 'none';
+  const half = HZ_FULL / 2 * dr, headOn = dr > 0 ? 1 - clamp((t - (C.letters - 0.1)) / 0.25) : 0;
+  [['headL', -1], ['headR', 1]].forEach(([id, s]) => {
+    const h = document.getElementById(id);
+    h.style.left = (960 + s * half * 0.98) + 'px'; h.style.top = (470 + 27) + 'px'; h.style.opacity = headOn.toFixed(3);
+  });
+
+  // letters: outlines rise one by one (1.2 + i·0.09), a little apart, then join with a spring on the impact
+  for (let i = 0; i < 4; i++) {
+    const el = L.letters[i], p = clamp((t - (C.letters + i * 0.09)) / 0.45);
+    const rise = settle(p), apart = (i - 1.5) * 26 * (1 - (di >= 0 ? spring(di) : 0));
+    el.style.transform = 'translate(' + apart.toFixed(2) + 'px,' + (70 * (1 - rise)).toFixed(2) + 'px)';
+    el.style.visibility = p > 0 ? 'visible' : 'hidden';
+    const fill = di >= 0 ? clamp(di / 0.05) : 0;
+    el.children[0].style.opacity = (p > 0 ? 1 : 0) * (1 - clamp(di / 0.22));      // outline gives way to the fill
+    el.children[1].style.opacity = fill;
+    // light sweep 2.7 → 3.6: a white band crossing the whole word
+    const sw = clamp((t - C.sweep) / 0.9), x = lerp(-260, L.w + 260, inout(sw));
+    el.children[2].style.backgroundImage = 'linear-gradient(105deg, rgba(95,168,245,0) ' + (x - 70) + 'px, rgba(95,168,245,0.75) ' + (x - 12) + 'px, rgba(255,255,255,1) ' + x + 'px, rgba(95,168,245,0.75) ' + (x + 12) + 'px, rgba(95,168,245,0) ' + (x + 70) + 'px)';
+    el.children[2].style.opacity = sw > 0 && sw < 1 ? 1 : 0;
+  }
+  { const sw = clamp((t - C.sweep) / 0.9), sp = document.getElementById('spark');
+    sp.style.left = (L.left + lerp(-260, L.w + 260, inout(sw))) + 'px'; sp.style.top = (470 + 27) + 'px';
+    sp.style.opacity = (sw > 0 && sw < 1 ? Math.sin(Math.PI * sw) : 0).toFixed(3); }
+  const punch = di >= 0 ? 1 + 0.045 * Math.exp(-di * 7) * Math.cos(di * 15) : 1;
+  word.style.transformOrigin = (L.w / 2) + 'px ' + L.base + 'px';
+  word.style.transform = 'scale(' + punch.toFixed(4) + ')';
+  word.style.opacity = 1 - ex;
+
+  // reflection rises under the horizon after the hit
+  const rp = settle(clamp((t - (IMPACT + 0.05)) / 0.5));
+  refl.style.top = L.top + 'px';
+  refl.style.transformOrigin = '0 ' + L.base + 'px';
+  refl.style.transform = 'translateY(' + (52 + 24 * (1 - rp)).toFixed(2) + 'px) scaleY(-1)';
+  refl.style.opacity = (0.22 * rp * (1 - ex)).toFixed(3);              // brand: reflection at 22%
+
+  // glow behind the word: lit by the impact, settles, gone on exit
+  const gl = di >= 0 ? clamp(di / 0.08) * (0.55 + 0.45 * Math.exp(-di * 1.6)) : 0;
+  glow.style.opacity = (gl * (1 - ex)).toFixed(3);
+};
+
+window.ready = document.fonts.load('800 300px Inter').then(() => document.fonts.ready).then(() => { layout(); window.seek(0); return true; });
+</script>
+</body>
+</html>

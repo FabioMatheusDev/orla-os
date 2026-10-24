@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Incomplete reference: create IDs/certificates with the Samsung TV SDK.
+     Fill REPLACE_* values and add a real icon before packaging.
+     Review version, permissions, CSP and network origins for the actual adapter. -->
+<widget xmlns="http://www.w3.org/ns/widgets"
+        xmlns:tizen="http://tizen.org/ns/widgets"
+        id="https://example.invalid/hometv" version="0.0.1"
+        viewmodes="maximized">
+  <tizen:application id="REPLACE_PACKAGE_ID.HomeTV"
+                     package="REPLACE_PACKAGE_ID" required_version="REPLACE_TARGET_VERSION"/>
+  <tizen:profile name="tv-samsung"/>
+  <content src="index.html"/>
+  <name>Home TV — Development</name>
+  <icon src="icon.png"/>
+  <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <access origin="https://api.themoviedb.org" subdomains="false"/>
+  <access origin="https://image.tmdb.org" subdomains="false"/>
+  <access origin="https://api.mdblist.com" subdomains="false"/>
+</widget>

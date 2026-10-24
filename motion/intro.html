@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>orla · abertura</title>
+<!-- "O nascer na orla": a curva de um horizonte acende, se achata numa linha, o sol nasce no
+     centro e a palavra sobe por trás da linha. Film for motion/RULES.md: window.seek(t) paints
+     frame t; no transitions, timers or state between frames. Rendered at 1920×1080 CSS × 2. -->
+<style>
+@font-face { font-family: Inter; src: url(../app/src/main/assets/www/fonts/InterVariable.ttf) format('truetype'); font-weight: 100 900; font-display: block; }
+html, body { margin: 0; background: #000; overflow: hidden; }
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+#scene { position: absolute; inset: 0; transform-origin: 50% 58%; }
+svg { position: absolute; inset: 0; overflow: visible; }
+#clip { position: absolute; left: 0; right: 0; top: 0; overflow: hidden; }
+.word { position: absolute; font: 800 280px/1 Inter, sans-serif; letter-spacing: -0.05em; white-space: nowrap; }
+.l { position: absolute; top: 0; }
+.l span { position: absolute; left: 0; top: 0; }
+.f { background: linear-gradient(180deg, #FFFFFF 0%, #F2F4F6 45%, #BFDDFF 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.s { -webkit-background-clip: text; background-clip: text; color: transparent; }
+#refl { -webkit-mask-image: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 45%); mask-image: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 45%); }
+#ref { position: absolute; visibility: hidden; }
+#grain { position: absolute; inset: 0; width: 1920px; height: 1080px; mix-blend-mode: screen; }
+#vignette { position: absolute; inset: 0; background: radial-gradient(75% 85% at 50% 52%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="scene">
+    <svg viewBox="0 0 1920 1080" width="1920" height="1080" aria-hidden="true">
+      <defs>
+        <linearGradient id="rimG" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1920" y2="0">
+          <stop id="r0" offset="0" stop-color="#8FC7FF" stop-opacity="0"/>
+          <stop id="r1" offset="0.5" stop-color="#FFFFFF" stop-opacity="1"/>
+          <stop id="r2" offset="1" stop-color="#8FC7FF" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="b40" filterUnits="userSpaceOnUse" x="-600" y="-600" width="3120" height="2280"><feGaussianBlur stdDeviation="40"/></filter>
+        <filter id="b14" filterUnits="userSpaceOnUse" x="-600" y="-600" width="3120" height="2280"><feGaussianBlur stdDeviation="14"/></filter>
+        <filter id="b4" filterUnits="userSpaceOnUse" x="-600" y="-600" width="3120" height="2280"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="b2" filterUnits="userSpaceOnUse" x="-600" y="-600" width="3120" height="2280"><feGaussianBlur stdDeviation="2"/></filter>
+        <clipPath id="planetClip"><circle id="pc" cx="960" cy="0" r="1"/></clipPath>
+      </defs>
+      <circle id="atmo" cx="960" cy="0" r="1" fill="none" stroke="url(#rimG)" stroke-width="90" filter="url(#b40)" opacity="0"/>
+      <circle id="planet" cx="960" cy="0" r="1" fill="#030406"/>
+      <g clip-path="url(#planetClip)">
+        <circle id="inner" cx="960" cy="0" r="1" fill="none" stroke="url(#rimG)" stroke-width="70" filter="url(#b14)" opacity="0"/>
+      </g>
+      <circle id="rim" cx="960" cy="0" r="1" fill="none" stroke="url(#rimG)" stroke-width="2.4" opacity="0"/>
+      <g id="sun" opacity="0">
+        <ellipse id="bloom" cx="960" cy="0" rx="220" ry="26" fill="#9CCBFF" filter="url(#b40)" opacity="0.3"/>
+        <ellipse id="streak" cx="960" cy="0" rx="980" ry="2.2" fill="#C9E4FF" filter="url(#b2)"/>
+        <ellipse id="core" cx="960" cy="0" rx="46" ry="7" fill="#FFFFFF" filter="url(#b4)"/>
+      </g>
+    </svg>
+    <div class="word" id="refl"></div>
+    <div id="clip"><div class="word" id="word"></div></div>
+  </div>
+  <canvas id="grain" width="960" height="540"></canvas>
+  <div id="vignette"></div>
+  <div class="word" id="ref">orla</div>
+</div>
+<script>
+'use strict';
+const B = window.BEATS || { duration: 5, cues: { start: 0.2, letters: 1.2, impact: 1.7, sweep: 2.7, exit: 4.2 } };
+const C = B.cues, IMPACT = (B.measured && B.measured.impact) || C.impact, DUR = B.duration;
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+function bezier(x1, y1, x2, y2) {
+  return (x) => {
+    if (x <= 0) return 0; if (x >= 1) return 1;
+    let t = x;
+    for (let i = 0; i < 8; i++) {
+      const cx = 3 * (1 - t) * (1 - t) * t * x1 + 3 * (1 - t) * t * t * x2 + t * t * t - x;
+      const dx = 3 * (1 - t) * (1 - t) * x1 + 6 * (1 - t) * t * (x2 - x1) + 3 * t * t * (1 - x2);
+      if (Math.abs(cx) < 1e-6 || !dx) break; t -= cx / dx;
+    }
+    return 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t;
+  };
+}
+const settle = bezier(0.2, 0.8, 0.2, 1), inout = bezier(0.65, 0, 0.35, 1), leave = bezier(0.4, 0, 1, 1), soft = bezier(0.33, 0, 0.15, 1);
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const $ = (id) => document.getElementById(id);
+
+// ---- layout constants, measured once after the font loads (not frame state) ----
+const L = { x: [], w: 0, asc: 0, base: 0, left: 0, top: 0, letters: [], refl: [], H: 0 };
+function layout() {
+  const ref = $('ref'), text = ref.firstChild, r0 = ref.getBoundingClientRect(), range = document.createRange();
+  for (let i = 0; i < 4; i++) { range.setStart(text, i); range.setEnd(text, i + 1); L.x.push(range.getBoundingClientRect().left - r0.left); }
+  range.setStart(text, 0); range.setEnd(text, 4); L.w = range.getBoundingClientRect().width;
+  // real ink metrics, so the word sits on the optical centre of the frame
+  const ctx = document.createElement('canvas').getContext('2d');
+  ctx.font = '800 280px Inter';
+  const m = ctx.measureText('orla');
+  L.asc = m.actualBoundingBoxAscent;                                   // ink above the baseline ("l")
+  const em = m.fontBoundingBoxAscent + m.fontBoundingBoxDescent;
+  L.base = (280 - em) / 2 + m.fontBoundingBoxAscent;                   // baseline inside the 240 px line box
+  L.H = Math.round(540 + L.asc / 2);                                   // baseline = horizon; ink centred on y 540
+  L.left = Math.round((1920 - L.w) / 2); L.top = L.H - L.base;
+  const make = (host) => 'orla'.split('').map((ch, i) => {
+    const el = document.createElement('div'); el.className = 'l'; el.style.left = L.x[i] + 'px';
+    el.innerHTML = '<span class="f">' + ch + '</span><span class="s">' + ch + '</span>'; host.appendChild(el); return el;
+  });
+  const word = $('word'), refl = $('refl');
+  $('clip').style.height = (L.H + 2) + 'px';
+  [word, refl].forEach(el => { el.style.left = L.left + 'px'; el.style.top = L.top + 'px'; el.style.width = Math.ceil(L.w) + 'px'; el.style.height = '280px'; });
+  L.letters = make(word); L.refl = make(refl);
+  [...L.letters, ...L.refl].forEach((el, k) => { const s = el.lastChild, i = k % 4; s.style.backgroundSize = L.w + 'px 100%'; s.style.backgroundPositionX = -L.x[i] + 'px'; });
+}
+
+// ---- grain: seeded per frame, so each frame is reproducible ----
+const grainCtx = $('grain').getContext('2d'), grainImg = grainCtx.createImageData(960, 540);
+function grain(frameSeed, amount) {
+  const r = mulberry32(frameSeed * 2654435761), d = grainImg.data;
+  for (let i = 0; i < d.length; i += 4) { const v = r() * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+  grainCtx.putImageData(grainImg, 0, 0);
+  $('grain').style.opacity = amount;
+}
+const setC = (el, cy, r) => { el.setAttribute('cy', cy.toFixed(2)); el.setAttribute('r', r.toFixed(2)); };
+
+window.seek = function seek(t) {
+  t = clamp(t, 0, DUR);
+  const di = t - IMPACT, ex = leave(clamp((t - C.exit) / 0.75)), end = clamp((t - (DUR - 0.12)) / 0.12);
+
+  // ground: black → the Home background (#07090C), reached by the impact
+  const g = settle(clamp(t / IMPACT));
+  $('stage').style.background = 'rgb(' + Math.round(7 * g) + ',' + Math.round(9 * g) + ',' + Math.round(12 * g) + ')';
+
+  // camera: a slow continuous push, a 1% breath on the impact
+  const breath = di >= 0 ? 0.01 * Math.exp(-di * 5) * Math.sin(Math.min(Math.PI, di * 9)) : 0;
+  $('scene').style.transform = 'scale(' + (1.0 + 0.035 * soft(clamp((t - C.start) / (DUR - C.start))) + breath).toFixed(4) + ')';
+
+  // the horizon: a curved edge rises from below and flattens into a line by the impact
+  const rise = inout(clamp((t - C.start) / (IMPACT - C.start)));
+  const edge = lerp(1130, L.H, rise);
+  const R = 650 * Math.pow(9000 / 650, rise);
+  ['pc', 'planet', 'inner', 'rim', 'atmo'].forEach(id => setC($(id), edge + R, R));
+  const lit = clamp((t - C.start) / 0.35);
+  const span = lerp(0.06, 0.42, settle(clamp((t - C.start) / 2.2)));
+  $('r0').setAttribute('offset', (0.5 - span).toFixed(4)); $('r2').setAttribute('offset', (0.5 + span).toFixed(4));
+  const fade = 1 - ex;
+  $('planet').setAttribute('opacity', fade.toFixed(3));
+  $('rim').setAttribute('opacity', (lit * (0.55 + 0.45 * rise) * fade).toFixed(3));
+  $('inner').setAttribute('opacity', (lit * 0.30 * fade).toFixed(3));
+  $('atmo').setAttribute('opacity', (lit * (0.18 + 0.22 * rise) * fade).toFixed(3));
+
+  // the sun on the edge: a glint, a burst on the impact, then a steady small light
+  const glint = clamp((t - (IMPACT - 0.6)) / 0.6) ** 3;
+  const burst = di >= 0 ? Math.exp(-di * 3.2) : 0;
+  const sun = Math.max(glint * 0.55, di >= 0 ? 0.38 + 0.62 * burst : 0) * fade;
+  $('sun').setAttribute('opacity', sun.toFixed(3));
+  ['bloom', 'streak', 'core'].forEach(id => $(id).setAttribute('cy', (edge - 1).toFixed(2)));
+  $('streak').setAttribute('rx', (lerp(240, 1000, di >= 0 ? 1 - Math.exp(-di * 4) : glint * 0.4)).toFixed(1));
+  $('streak').setAttribute('ry', (2.2 + 2.5 * burst).toFixed(2));
+  $('bloom').setAttribute('opacity', (0.18 + 0.32 * burst).toFixed(3));
+
+  // the word rises from behind the horizon (clipped by it), letter by letter, on the impact
+  for (let i = 0; i < 4; i++) {
+    const p = settle(clamp((t - (IMPACT - 0.08 + i * 0.06)) / 0.95));
+    const lift = (1 - p) * (L.asc + 30), out = ex * (34 + i * 6);
+    L.letters[i].style.transform = 'translateY(' + (lift - out).toFixed(2) + 'px)';
+    L.refl[i].style.transform = 'translateY(' + (-lift).toFixed(2) + 'px)';
+    // one light pass across the word, in step with the shimmer (2.7 → 3.6)
+    const sw = clamp((t - C.sweep) / 0.9), x = lerp(-300, L.w + 300, inout(sw));
+    const band = 'linear-gradient(100deg, rgba(255,255,255,0) ' + (x - 120) + 'px, rgba(201,228,255,0.55) ' + (x - 30) + 'px, rgba(255,255,255,0.95) ' + x + 'px, rgba(201,228,255,0.55) ' + (x + 30) + 'px, rgba(255,255,255,0) ' + (x + 120) + 'px)';
+    [L.letters[i], L.refl[i]].forEach(el => { el.lastChild.style.backgroundImage = band; el.lastChild.style.opacity = sw > 0 && sw < 1 ? 1 : 0; });
+  }
+  const word = $('word');
+  word.style.opacity = (1 - ex).toFixed(3);
+  word.style.filter = ex > 0 ? 'blur(' + (ex * 14).toFixed(2) + 'px)' : 'none';
+  const refl = $('refl');
+  refl.style.transformOrigin = '0 ' + L.base + 'px';
+  refl.style.transform = 'translateY(6px) scaleY(-1)';
+  refl.style.opacity = (0.16 * clamp(di / 0.4) * (1 - ex)).toFixed(3);
+  refl.style.filter = 'blur(1.5px)';
+
+  // film grain and vignette; both gone on the last frames, which are flat #07090C
+  // (no per-frame grain: it destroys the H.264 compression for no visible gain on a TV)
+  $('vignette').style.opacity = (1 - end).toFixed(3);
+};
+
+window.ready = document.fonts.load('800 280px Inter').then(() => document.fonts.ready).then(() => { layout(); window.seek(0); return true; });
+</script>
+</body>
+</html>

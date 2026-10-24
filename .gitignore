@@ -1,15 +1,40 @@
-# Your settings and signing key stay on your machine
+﻿# Local configuration and credentials (never publish)
+.local/
+.vscode/
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
 config.properties
+**/local.properties
+**/secrets.properties
+**/credentials.json
+**/config.local.js
+**/secrets.*
+app/src/main/assets/www/config.js
+docs/tv-home/app/src/main/assets/www/config.js
 *.keystore
-*.idsig
+*.jks
+*.p12
+*.pem
+*.key
 
-# Build output
-out/
+# Generated artifacts and development dependencies
+.gradle/
+**/build/
+**/node_modules/
+__pycache__/
+*.pyc
 *.apk
+*.aab
+*.apks
+*.idsig
 *.ipk
 *.wgt
-__pycache__/
-
-# macOS
+out/
+.idea/
+*.iml
+captures/
 .DS_Store
-tools/.i18n-cache.json
