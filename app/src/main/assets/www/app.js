@@ -1,4 +1,4 @@
-/* Home TV — lógica da tela inicial (sem bibliotecas) */
+/* orla — lógica da tela inicial (sem bibliotecas) */
 (function () {
   'use strict';
   const CFG = window.HOME_CONFIG || {};
@@ -1396,7 +1396,7 @@
     $('#btnRedirect').addEventListener('click', () => {
       if (!NATIVE) return toast('Só funciona na TV');
       const s = JSON.parse(window.Android.homeStatus());
-      if (s.amazonDisabled) return toast('A Home TV já é a única tela inicial');
+      if (s.amazonDisabled) return toast('A orla já é a única tela inicial');
       window.Android.setRedirect(!s.redirect);
       refreshHomeStatus();
       toast(!s.redirect ? 'O botão Home voltará para esta tela' : 'O botão Home voltará para a tela da Amazon');

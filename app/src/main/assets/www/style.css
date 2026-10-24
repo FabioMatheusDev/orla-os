@@ -33,7 +33,12 @@ button.glass { transition: transform .2s; }
 /* ---------- home ---------- */
 #home { position: absolute; inset: 0; }
 .top { position: absolute; left: 96px; right: 96px; top: 60px; height: 72px; display: flex; justify-content: space-between; align-items: center; }
-h1 { margin: 0; font-size: 72px; font-weight: 800; letter-spacing: -0.035em; line-height: 1; }
+/* logo orla (canvas da marca: Inter 800, minúsculas, –5%, luz de cima #FFFFFF → #BFDDFF) e o nome da tela ao lado */
+.brand { display: flex; align-items: center; gap: 24px; }
+.orla { font-size: 80px; font-weight: 800; letter-spacing: -0.05em; line-height: 1; padding-bottom: 6px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F2F4F6 45%, #BFDDFF 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.brand-sep { width: 2px; height: 40px; border-radius: 1px; background: rgba(242,244,246,0.22); }
+h1 { margin: 0; font-size: 30px; font-weight: 600; letter-spacing: -0.01em; line-height: 1; color: #A3ABB5; }
 .tabs { position: absolute; left: calc(50% - 48px); top: 50%; transform: translate(-50%, -50%); display: flex; gap: 4px; padding: 5px; border-radius: 32px; }
 .tab { height: 52px; padding: 0 28px; border-radius: 26px; font-size: 23px; font-weight: 500; color: #A3ABB5; border: 1px solid transparent; transition: transform .2s; }
 .tab.on { background: rgba(255,255,255,0.18); color: #F2F4F6; border-color: rgba(255,255,255,0.22); font-weight: 700; }
