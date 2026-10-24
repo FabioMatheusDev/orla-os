@@ -1,4 +1,7 @@
-﻿# Compatibilidade da Home TV
+﻿# Compatibilidade da orla
+
+Para instalar em qualquer TV, inclusive adaptando o código, um agente de IA segue o
+[AGENTS.md](AGENTS.md). Esta página registra o que já foi validado em aparelho real.
 
 Análise de código em 23/10/2026. Instalar um APK, abrir a interface e substituir o
 botão Home são capacidades diferentes. Só o aparelho abaixo teve validação física.

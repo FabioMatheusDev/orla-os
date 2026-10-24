@@ -26,82 +26,88 @@ Ela é grátis, é sua e não envia nada para nenhum servidor nosso: não existe
 
 ## Funciona na minha TV?
 
-| Aparelho | Situação |
+**Sim, com a ajuda de um agente de IA.** O projeto vem com um guia ([AGENTS.md](AGENTS.md))
+que ensina o agente a instalar e, quando preciso, **adaptar a orla para a sua TV**,
+seguindo as regras oficiais de cada fabricante.
+
+| TV ou aparelho | Como o agente instala |
 |---|---|
-| **Fire TV Stick 4K** (Fire OS 8) | ✅ Testado e funcionando |
-| Outros Fire TV com Fire OS | Deve funcionar, ainda não testado |
-| Google TV / Android TV | Em breve |
-| LG (webOS), Samsung (Tizen), Fire TV com Vega OS | Ainda não. Uma saída é ligar um Fire TV Stick na TV |
+| **Fire TV** (Fire OS: Fire TV Stick, Cube, TVs Fire TV) | Pronta: instala direto |
+| **Google TV / Android TV** (Chromecast, TCL, Sony, Philips, Xiaomi…) | Instala o mesmo app e ajusta os atalhos da TV |
+| **LG** (webOS) | Cria a versão LG e instala pelo Developer Mode da LG |
+| **Samsung** (Tizen, 2017+) | Cria a versão Samsung e instala pelo modo desenvolvedor da Samsung |
+| **Fire TV com Vega OS** (modelos novos) | Cria a versão Vega com o kit de desenvolvimento da Amazon |
+| Outras (Roku, VIDAA…) | O agente verifica se há caminho oficial; se não, sugere um Fire TV Stick ou Google TV no HDMI |
 
-Detalhes em [COMPATIBILITY.md](COMPATIBILITY.md).
-
-## O que você precisa
-
-- A **Fire TV** e um **computador** (Windows, Mac ou Linux) **na mesma rede Wi-Fi**.
-- Uns **20 minutos** na primeira vez.
-- Programas no computador (todos grátis). São usados só para instalar:
-  - **Java JDK 17** ou mais novo: [Adoptium](https://adoptium.net/)
-  - **Node.js 20** ou mais novo: [nodejs.org](https://nodejs.org/)
-  - **Android SDK** (platform 34, build-tools 34) e **ADB**: o jeito mais simples é
-    instalar o [Android Studio](https://developer.android.com/studio) uma vez
-  - **Git**, para baixar o projeto: [git-scm.com](https://git-scm.com/)
-- **Opcional:** uma chave grátis do [TMDB](https://www.themoviedb.org/) para ver os
-  filmes e séries em alta, e uma do [MDBList](https://mdblist.com/) para as notas do IMDb
-  e do Rotten Tomatoes. Sem elas, a barra de apps e o resto funcionam normalmente.
-
-> Não quer instalar nada disso? Peça a um assistente de IA no computador (como o
-> [Claude Code](https://claude.com/claude-code)): *"Instale a orla na minha Fire TV,
-> IP 192.168.0.50"*. O projeto tem instruções para ele no arquivo `AGENTS.md`.
+Na Fire TV, a orla já foi testada e assume o botão Home. Nas outras, o agente faz a
+adaptação na hora. Em LG e Samsung ela abre como um app (as teclas de atalho e o "abrir o
+último app" da TV deixam a orla a um clique). Detalhes em [COMPATIBILITY.md](COMPATIBILITY.md).
 
 ## Como instalar
 
-### 1. Prepare a Fire TV
+### 1. Tenha um agente de IA no computador
 
-1. Na TV, abra **Configurações → Minha Fire TV → Sobre**.
-2. Clique **7 vezes** no nome do aparelho, até aparecer *"Você agora é um desenvolvedor"*.
-3. Volte e abra **Opções do desenvolvedor → Depuração ADB → Ligado**.
-4. Anote o **endereço IP**: **Configurações → Minha Fire TV → Sobre → Rede**
-   (algo como `192.168.0.50`).
+Qualquer um destes serve (todos rodam no Windows, Mac e Linux):
 
-### 2. Baixe a orla no computador
+- [Claude Code](https://claude.com/claude-code) (Anthropic)
+- [Codex](https://openai.com/codex/) (OpenAI)
+- [Gemini CLI](https://github.com/google-gemini/gemini-cli) ou [Antigravity](https://antigravity.google/) (Google)
 
-```bash
-git clone https://github.com/FabioMatheusDev/orla-os.git
-cd orla-os
-```
+O computador e a TV precisam estar **na mesma rede Wi-Fi**.
 
-### 3. Instale
+### 2. Baixe a orla
 
-Troque `192.168.0.50` pelo IP da sua TV.
+Peça ao próprio agente: *"Baixe o projeto https://github.com/FabioMatheusDev/orla-os"*,
+ou, se preferir, rode `git clone https://github.com/FabioMatheusDev/orla-os.git`.
+Depois abra o agente **dentro da pasta `orla-os`**.
 
-**Windows** (PowerShell):
+### 3. Peça a instalação
+
+Copie e cole, trocando pelos seus dados:
+
+> Leia o arquivo **AGENTS.md** e instale a orla na minha TV.
+> Minha TV é uma **[marca e modelo, ex.: Fire TV Stick 4K / LG C3 / Samsung Crystal 2023]**,
+> o IP dela é **[ex.: 192.168.0.50]** e eu moro em **[cidade]**.
+
+O agente vai:
+
+- conferir o que falta no computador e instalar (com o seu ok);
+- dizer o que **você** precisa fazer na TV, como ligar o modo desenvolvedor, aceitar um
+  aviso ou entrar na conta do fabricante;
+- adaptar e instalar a orla, e mostrar como usar e como desfazer.
+
+**Você não precisa entender nada de programação.** Só siga o que ele pedir na TV.
+
+> Não sabe o IP da TV? Pergunte ao agente: ele explica onde achar no menu da sua TV.
+
+### 4. (Opcional) Coloque suas chaves
+
+Para ver filmes e séries em alta, crie uma chave grátis do [TMDB](https://www.themoviedb.org/)
+(e, se quiser as notas do IMDb e do Rotten Tomatoes, do [MDBList](https://mdblist.com/)).
+Depois, **no controle da TV**, aperte **☰ → Catálogo e chaves** e digite. As chaves ficam
+guardadas **só na sua TV**. **Não cole as chaves no chat do agente.**
+
+> **Como pegar a chave do TMDB:** crie uma conta em themoviedb.org, abra
+> **Configurações → API → Criar → Developer**, preencha o formulário (uso pessoal) e copie
+> a **Chave da API**.
+
+<details>
+<summary>Prefiro instalar sem agente (Fire TV)</summary>
+
+Você vai precisar de Git, Java JDK 17+, Node.js 20+ e Android SDK (platform 34,
+build-tools 34) com ADB. Na Fire TV: Configurações → Minha Fire TV → Sobre → clique 7 vezes
+no nome do aparelho → Opções do desenvolvedor → **Depuração ADB: Ligado**. Depois, na pasta
+do projeto:
+
 ```powershell
-.\scripts\install.ps1 -Ip 192.168.0.50
+.\scripts\install.ps1 -Ip 192.168.0.50      # Windows
+./scripts/install.sh 192.168.0.50          # Mac / Linux (antes: chmod +x gradlew scripts/*.sh)
 ```
 
-**Mac / Linux** (Terminal):
-```bash
-chmod +x gradlew scripts/*.sh
-./scripts/install.sh 192.168.0.50
-```
+Aceite **"Permitir depuração USB"** na TV, marcando **"Sempre permitir"**. Para as outras
+TVs, os passos estão no [AGENTS.md](AGENTS.md).
 
-Na primeira vez, a TV pergunta **"Permitir depuração USB?"**. Marque **"Sempre permitir
-deste computador"** e confirme. O script continua sozinho.
-
-### 4. Pronto
-
-Aperte o **botão Home** do controle: a orla aparece. A tela da Amazon pode piscar por um
-instante antes, isso é normal.
-
-### 5. (Opcional) Coloque suas chaves
-
-Para ver filmes e séries em alta: no controle, aperte **☰ → Catálogo e chaves** e digite
-sua chave do TMDB (e a do MDBList, se tiver). Elas ficam guardadas **só na sua TV**,
-protegidas.
-
-> **Como pegar a chave do TMDB:** crie uma conta grátis em themoviedb.org, abra
-> **Configurações → API → Criar → Developer**, preencha o formulário (uso pessoal)
-> e copie a **Chave da API**.
+</details>
 
 ## Como usar
 
@@ -121,27 +127,29 @@ protegidas.
 
 ## Como desfazer
 
-A tela da Amazon nunca é apagada nem desativada. Para voltar ao normal:
-
-- **Pela TV:** **☰ → Restaurar tela original do Fire TV**.
-- **Pelo computador:** `.\scripts\restore.ps1 -Ip SEU_IP` (Windows) ou
-  `./scripts/restore.sh SEU_IP` (Mac/Linux). Para também desinstalar a orla, acrescente
-  `-Uninstall` (Windows) ou `--uninstall` (Mac/Linux).
+O mais fácil: peça ao agente *"desfaça a instalação da orla"*. Ele sabe o caminho de volta
+de cada TV. Na Fire TV, a tela da Amazon nunca é apagada, e também dá para voltar
+pela própria TV, em **☰ → Restaurar tela original do Fire TV**.
 
 ## Perguntas frequentes
 
 **É pirataria?** Não. A orla só mostra o que está em alta e abre os apps que você já
 assina.
 
-**Mexe em alguma coisa da minha TV?** Ela instala o app e liga um serviço de acessibilidade
-que só percebe quando a tela inicial da Amazon aparece, para trazer a orla de volta. Ela
-não lê o que está na tela, não desativa apps e não muda a rede, a imagem ou o som.
+**Mexe em alguma coisa da minha TV?** Ela instala o app. Na Fire TV, também liga um serviço
+de acessibilidade que só percebe quando a tela inicial da Amazon aparece, para trazer a orla
+de volta: ele não lê o que está na tela. O agente é instruído a não desativar apps, não
+mudar rede, imagem ou som, e a pedir sua autorização antes de qualquer mudança no sistema.
+
+**É seguro deixar um agente de IA mexer?** Ele roda comandos no seu computador e na TV,
+sempre explicando antes. O guia proíbe factory reset, root e apagar apps do sistema, e
+exige um jeito de desfazer cada mudança. Leia o que ele propõe antes de aceitar.
 
 **Minhas chaves estão seguras?** Elas ficam cifradas na própria TV e não vão para nenhum
 servidor nem para este repositório.
 
-**Como atualizo?** Baixe a versão nova (`git pull`) e rode o mesmo comando de instalação.
-Suas chaves, favoritos e a ordem da barra continuam.
+**Como atualizo?** Peça ao agente: *"atualize a orla na minha TV"*. Suas chaves, favoritos
+e a ordem da barra continuam.
 
 **Preciso deixar o computador ligado?** Não. Ele só é usado para instalar.
 
