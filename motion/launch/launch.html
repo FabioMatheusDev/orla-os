@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>orla · lançamento</title>
+<!-- Launch film. window.seek(t) paints frame t (motion/RULES.md): no transitions, timers or
+     state between frames. ?v=1 renders the vertical 9:16 cut from the same timeline. -->
+<style>
+@font-face { font-family: Inter; src: url(../../app/src/main/assets/www/fonts/InterVariable.ttf) format('truetype'); font-weight: 100 900; font-display: block; }
+html, body { margin: 0; background: #000; overflow: hidden; }
+#stage { position: relative; overflow: hidden; background: #07090C; font-family: Inter, sans-serif; color: #F2F4F6; }
+.abs { position: absolute; }
+#amb { inset: 0; }
+/* ads (cold open) */
+.ad { border-radius: 14px; background: #1A1F27; border: 2px solid #343C48; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; letter-spacing: .12em; color: #6E7681; font-size: 22px; }
+/* horizon + wordmark */
+#hz { height: 3px; border-radius: 2px; background: linear-gradient(90deg, rgba(201,228,255,0), #C9E4FF 50%, rgba(201,228,255,0)); }
+#sun { width: 240px; height: 30px; margin: -15px 0 0 -120px; border-radius: 50%; background: radial-gradient(closest-side, #fff, rgba(143,199,255,.7) 40%, rgba(143,199,255,0)); }
+.word { font-weight: 800; letter-spacing: -0.05em; line-height: 1; white-space: nowrap;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F2F4F6 45%, #BFDDFF 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.clip { overflow: hidden; }
+/* captions: two lines, each rising out of its own mask */
+.cap { font-weight: 800; letter-spacing: -0.035em; line-height: 1.04; }
+.cap .ln { display: block; overflow: hidden; padding-bottom: .08em; }
+.cap .ln span { display: inline-block; white-space: nowrap; }
+.cap .ln + .ln span { color: #8FC7FF; }
+/* the TV screen holding the UI plates */
+#screen { border-radius: 26px; overflow: hidden; background: #000; box-shadow: 0 30px 80px rgba(0,0,0,.55); transform-origin: 50% 50%; }
+#screen img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; }
+#wipe { position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px; background: #F2F4F6; }
+.tagpill { padding: 10px 22px; border-radius: 30px; font-weight: 700; background: rgba(7,9,12,.75); border: 1.5px solid rgba(255,255,255,.25); }
+/* platforms + agent */
+.plat { font-weight: 800; letter-spacing: -0.03em; white-space: nowrap; }
+#term { border-radius: 26px; background: #0D1117; border: 1.5px solid #262D37; box-shadow: 0 30px 80px rgba(0,0,0,.5); overflow: hidden; }
+#term .bar { height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 24px; border-bottom: 1.5px solid #1C2129; color: #A3ABB5; font-weight: 600; }
+#term .dot { width: 14px; height: 14px; border-radius: 50%; background: #2A323D; }
+#term .body { padding: 30px 34px; display: flex; flex-direction: column; gap: 22px; }
+#term .you { color: #A3ABB5; font-weight: 600; }
+#term .prompt { font-weight: 600; line-height: 1.35; }
+#term .caret { display: inline-block; width: .5em; height: 1em; margin-left: 2px; vertical-align: -.12em; background: #8FC7FF; }
+#term .ok { font-weight: 600; display: flex; gap: 14px; align-items: baseline; }
+#term .ok b { color: #5FD49A; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="abs" id="amb"></div>
+  <div class="abs" id="ads"></div>
+  <div class="abs cap" id="open"><span class="ln"><span>Sua TV virou</span></span><span class="ln"><span>um outdoor.</span></span></div>
+  <div class="abs" id="hz"></div><div class="abs" id="sun"></div>
+  <div class="abs clip" id="logoClip"><div class="word" id="logo">orla</div></div>
+  <div class="abs" id="tag" style="font-weight:600;color:#A3ABB5;white-space:nowrap">A tela inicial que é sua.</div>
+  <div class="abs" id="screen"><img id="pa" alt=""><img id="pb" alt=""><div id="wipe"></div></div>
+  <div class="abs tagpill" id="pillA">Vidro</div><div class="abs tagpill" id="pillB">Sólido</div>
+  <div class="abs cap" id="cap"><span class="ln"><span id="c1"></span></span><span class="ln"><span id="c2"></span></span></div>
+  <div class="abs cap" id="any"><span class="ln"><span>Em qualquer TV.</span></span></div>
+  <div class="abs" id="plats"></div>
+  <div class="abs" id="term"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:10px">Seu agente de IA</span></div>
+    <div class="body"><div class="you">Você</div><div class="prompt"><span id="typed"></span><span class="caret" id="caret"></span></div>
+      <div class="ok" id="ok0"><b>✓</b>Modo desenvolvedor ativado na TV</div>
+      <div class="ok" id="ok1"><b>✓</b>orla adaptada para a sua TV</div>
+      <div class="ok" id="ok2"><b>✓</b>Instalada. Aperte o botão Home.</div></div></div>
+  <div class="abs" id="endTag" style="font-weight:700;white-space:nowrap">Grátis. Sem anúncios. Open source.</div>
+  <div class="abs" id="url" style="font-weight:600;color:#8FC7FF;white-space:nowrap">github.com/FabioMatheusDev/orla-os</div>
+  <img id="ref" alt="" style="display:none">
+</div>
+<script>
+'use strict';
+const V = new URLSearchParams(location.search).get('v') === '1';
+const W = V ? 1080 : 1920, H = V ? 1920 : 1080;
+const B = window.BEATS || { beat: 0.6, bar: 2.4, duration: 40.8, cues: { open: 0, logo: 4.8, product: 9.6, details: 19.2, looks: 24, anyTv: 28.8, agent: 31.2, end: 36 }, measured: {} };
+const C = B.cues, BAR = B.bar, BEAT = B.beat, DUR = B.duration;
+const hit = (c) => (B.measured && B.measured[c]) || c;
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, p) => a + (b - a) * p;
+function bezier(x1, y1, x2, y2) { return (x) => { if (x <= 0) return 0; if (x >= 1) return 1; let t = x;
+  for (let i = 0; i < 8; i++) { const cx = 3 * (1 - t) * (1 - t) * t * x1 + 3 * (1 - t) * t * t * x2 + t * t * t - x, dx = 3 * (1 - t) * (1 - t) * x1 + 6 * (1 - t) * t * (x2 - x1) + 3 * t * t * (1 - x2); if (Math.abs(cx) < 1e-6 || !dx) break; t -= cx / dx; }
+  return 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t; }; }
+const settle = bezier(0.2, 0.8, 0.2, 1), inout = bezier(0.65, 0, 0.35, 1), leave = bezier(0.4, 0, 1, 1), spring = (x) => x <= 0 ? 0 : 1 - Math.exp(-x * 9) * Math.cos(x * 13);
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const $ = (id) => document.getElementById(id);
+const set = (el, css) => { for (const k in css) el.style[k] = css[k]; };
+const show = (el, on) => { el.style.visibility = on ? 'visible' : 'hidden'; };
+const P = (t, a, len) => clamp((t - a) / len);                  // progress of a segment
+
+// ---- layout constants ----
+const S = V ? 1.25 : 1;                                        // type scale for the vertical cut
+const scr = V ? { w: 1000, h: 562, x: 40, y: 560 } : { w: 1160, h: 652, x: 680, y: 214 };
+const capPos = V ? { x: 60, y: 1230, fs: 84 } : { x: 96, y: 440, fs: 54 };
+const plates = ['home', 'home2', 'home3', 'dock', 'move', 'move2', 'details', 'explore', 'home-solid', 'allapps'];
+const ADS = []; {
+  const r = mulberry32(7), cols = V ? 3 : 6, rows = V ? 7 : 4, gw = W - 120, gh = H - 120, cw = gw / cols, ch = gh / rows;
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+    const el = document.createElement('div'); el.className = 'abs ad'; el.textContent = r() < 0.5 ? 'ANÚNCIO' : 'PATROCINADO';
+    set(el, { left: (60 + i * cw + 8) + 'px', top: (60 + j * ch + 8) + 'px', width: (cw - 16) + 'px', height: (ch - 16) + 'px' });
+    const hot = r(); if (hot < 0.3) { el.style.background = '#3A1414'; el.style.color = '#FF8A80'; el.style.borderColor = '#7A2A2A'; } else if (hot < 0.5) { el.style.background = '#3A2E10'; el.style.color = '#FFD27A'; el.style.borderColor = '#7A6020'; }
+    $('ads').appendChild(el); ADS.push({ el, at: 0.05 + r() * 1.4, x: 60 + i * cw + cw / 2, y: 60 + j * ch + ch / 2 });
+  }
+}
+const PL = ['Fire TV', 'Google TV', 'LG webOS', 'Samsung Tizen'];
+PL.forEach((n, i) => { const el = document.createElement('div'); el.className = 'abs plat'; el.textContent = n; el.id = 'pl' + i; $('plats').appendChild(el); });
+const PROMPT = 'Leia o AGENTS.md e instale a orla na minha TV.';
+// captions per product beat: [start, end, line 1, line 2]
+const CAPS = [
+  [C.product, C.product + BAR, 'Tudo o que importa,', 'numa tela só.'],
+  [C.product + BAR, C.product + 2 * BAR, 'O que está em alta,', 'sempre à mão.'],
+  [C.product + 2 * BAR, C.product + 3 * BAR, 'Seus apps,', 'na sua ordem.'],
+  [C.product + 3 * BAR, C.details, 'Segure OK', 'e mude de lugar.'],
+  [C.details, C.details + BAR, 'Cada título,', 'por inteiro.'],
+  [C.details + BAR, C.looks, 'Um catálogo', 'para explorar.'],
+  [C.looks, C.looks + BAR, 'Vidro ou Sólido.', 'Você escolhe.'],
+  [C.looks + BAR, C.anyTv, 'TV ao vivo e', 'todos os seus apps.'],
+  [C.agent, C.end, 'Peça ao seu', 'agente de IA.']
+];
+// plate shown per segment and the zoom inside the screen: [plate, zoom, focusX, focusY] (focus in 0..1 of the plate)
+function plateAt(t) {
+  const b = C.product;
+  if (t < b + BAR) return ['home', 1.0 + 0.05 * P(t, b, BAR), 0.5, 0.5];
+  if (t < b + 2 * BAR) return ['home2', lerp(1.35, 1.45, P(t, b + BAR, BAR)), 0.3, 0.35];
+  if (t < b + 3 * BAR) return ['dock', lerp(1.7, 1.8, P(t, b + 2 * BAR, BAR)), 0.0, 1.0];
+  if (t < b + 3.5 * BAR) return ['move', 1.8, 0.0, 1.0];
+  if (t < C.details) return ['move2', 1.8, 0.0, 1.0];
+  if (t < C.details + BAR) return ['details', lerp(1.0, 1.06, P(t, C.details, BAR)), 0.5, 0.4];
+  if (t < C.looks) return ['explore', lerp(1.06, 1.0, P(t, C.details + BAR, BAR)), 0.5, 0.5];
+  if (t < C.looks + BAR) return ['home2', 1.0, 0.5, 0.5];
+  return ['allapps', lerp(1.0, 1.04, P(t, C.looks + BAR, BAR)), 0.3, 0.4];
+}
+function lineIn(spanEl, p, out) {                            // a caption line rises from its mask, then leaves upward
+  const y = (1 - settle(p)) * 110 - leave(out) * 110;
+  spanEl.style.transform = 'translateY(' + y.toFixed(1) + '%)';
+}
+function placeImg(img, name, zoom, fx, fy) {
+  img.src = 'plates/' + name + '.png';
+  const tx = -(zoom - 1) * fx * scr.w, ty = -(zoom - 1) * fy * scr.h;
+  img.style.transform = 'translate(' + tx.toFixed(1) + 'px,' + ty.toFixed(1) + 'px) scale(' + zoom.toFixed(4) + ')';
+}
+
+window.seek = function seek(t) {
+  t = clamp(t, 0, DUR);
+  const st = $('stage'); st.style.width = W + 'px'; st.style.height = H + 'px';
+
+  // ambient light: ice glow that breathes on the bars, warmer during the product
+  const g = 0.10 + 0.05 * Math.sin(t / BAR * Math.PI);
+  $('amb').style.background = 'radial-gradient(70% 60% at ' + (V ? '50% 30%' : '70% 45%') + ', rgba(95,168,245,' + g.toFixed(3) + ') 0%, rgba(7,9,12,0) 70%), #07090C';
+
+  // ---- 1. cold open: ads pop in, the headline types up, everything collapses into a line ----
+  const collapse = P(t, hit(C.logo) - 0.45, 0.45);
+  show($('ads'), t < hit(C.logo));
+  ADS.forEach(a => {
+    const p = spring(clamp((t - a.at) / 0.5)), flick = (Math.floor(t * 12 + a.at * 30) % 7 === 0) ? 0.55 : 1;
+    const sy = (1 - inout(collapse)) * p;
+    a.el.style.transform = 'translate(0,' + ((H * 0.5 - a.y) * inout(collapse)).toFixed(1) + 'px) scale(' + Math.max(0.001, p).toFixed(3) + ',' + Math.max(0.001, sy).toFixed(3) + ')';
+    a.el.style.opacity = (p > 0 ? flick : 0) * (t < hit(C.logo) ? 1 : 0);
+  });
+  const op = $('open'); show(op, t < hit(C.logo));
+  set(op, { left: (V ? 60 : 96) + 'px', top: (V ? 760 : 360) + 'px', fontSize: (V ? 130 : 150) + 'px', textShadow: '0 6px 40px rgba(0,0,0,1), 0 0 80px rgba(0,0,0,.9)' });
+  lineIn(op.children[0].firstChild, P(t, 0.5, 0.5), collapse); lineIn(op.children[1].firstChild, P(t, 1.0, 0.5), collapse);
+
+  // ---- 2. logo over the horizon (and again on the end card) ----
+  const endP = P(t, hit(C.end), 1.2);
+  const inLogo = t >= hit(C.logo) - 0.45 && t < C.product + 0.6, inEnd = t >= hit(C.end);
+  const hzY = V ? 960 : 600;
+  const logoFs = V ? 240 : 300;
+  const hzW = inEnd ? lerp(0.2, 1, settle(endP)) : t < hit(C.logo) ? inout(collapse) : 1;
+  const hzOut = inEnd ? 0 : leave(P(t, C.product - 0.3, 0.6));
+  show($('hz'), inLogo || inEnd); show($('sun'), inLogo || inEnd);
+  set($('hz'), { left: (W * 0.08) + 'px', width: (W * 0.84) + 'px', top: hzY + 'px', transform: 'scaleX(' + Math.max(0.001, hzW * (1 - hzOut)).toFixed(4) + ')' });
+  const sunP = inEnd ? Math.exp(-(t - hit(C.end)) * 2.5) : t >= hit(C.logo) ? Math.exp(-(t - hit(C.logo)) * 2.5) : 0;
+  set($('sun'), { left: (W / 2) + 'px', top: (hzY + 1) + 'px', opacity: ((0.35 + 0.65 * sunP) * (1 - hzOut)).toFixed(3), transform: 'scale(' + (1 + 1.5 * sunP).toFixed(3) + ',1)' });
+  const lc = $('logoClip'), lg = $('logo');
+  show(lc, inLogo || inEnd);
+  set(lc, { left: '0px', width: W + 'px', top: (hzY - logoFs) + 'px', height: (logoFs + 2) + 'px' });
+  const rise = inEnd ? settle(P(t, hit(C.end) + 0.05, 0.9)) : settle(P(t, hit(C.logo) + 0.02, 0.9));
+  const lw = logoFs * 1.92;
+  set(lg, { position: 'absolute', fontSize: logoFs + 'px', left: ((W - lw) / 2) + 'px', top: (logoFs * 0.2) + 'px',
+    transform: 'translateY(' + ((1 - rise) * logoFs * 1.1 - (inEnd ? 0 : hzOut * logoFs * 1.2)).toFixed(1) + 'px)' });
+  const tg = $('tag'); show(tg, inLogo && t > hit(C.logo));
+  const tp = settle(P(t, hit(C.logo) + 0.9, 0.7));
+  set(tg, { fontSize: (V ? 56 : 46) + 'px', left: '0px', width: W + 'px', textAlign: 'center', top: (hzY + 60) + 'px', opacity: (tp * (1 - hzOut)).toFixed(3), transform: 'translateY(' + ((1 - tp) * 30).toFixed(1) + 'px)' });
+
+  // ---- 3–5. the screen with the UI ----
+  const scrOn = t >= C.product - 0.4 && t < C.anyTv;
+  const sc = $('screen'); show(sc, scrOn);
+  if (scrOn) {
+    const enter = settle(P(t, C.product - 0.4, 1.0)), exit = leave(P(t, hit(C.anyTv) - 0.35, 0.35));
+    // a short scale "beat" on every bar change
+    const bp = (t - C.product) / BAR, bump = 0.012 * Math.exp(-((bp % 1) * BAR) * 6);
+    const sx = scr.x, sy = scr.y + (1 - enter) * (V ? 300 : 260) - exit * 80;
+    set(sc, { left: sx + 'px', top: sy + 'px', width: scr.w + 'px', height: scr.h + 'px', opacity: (enter * (1 - exit)).toFixed(3),
+      transform: 'scale(' + (0.94 + 0.06 * enter + bump).toFixed(4) + ')' });
+    const [name, zoom, fx, fy] = plateAt(t);
+    placeImg($('pa'), name, zoom, fx, fy);
+    // glass vs solid: the second plate revealed by a wipe that sweeps across
+    const inLooks = t >= C.looks && t < C.looks + BAR, pb = $('pb'), wp = $('wipe');
+    show(pb, inLooks); show(wp, inLooks); show($('pillA'), inLooks); show($('pillB'), inLooks);
+    if (inLooks) {
+      const lp = P(t, C.looks, BAR), x = lerp(0.85, 0.15, inout(clamp(lp * 1.25))) * scr.w;
+      placeImg(pb, 'home-solid', 1.0, 0.5, 0.5);
+      pb.style.clipPath = 'inset(0 0 0 ' + x.toFixed(1) + 'px)'; wp.style.left = x.toFixed(1) + 'px';
+      const pf = (V ? 34 : 26) + 'px';
+      set($('pillA'), { fontSize: pf, left: (sx + 24) + 'px', top: (sy + scr.h - 74) + 'px' });
+      set($('pillB'), { fontSize: pf, left: (sx + scr.w - 150) + 'px', top: (sy + scr.h - 74) + 'px' });
+    }
+  } else { show($('pb'), false); show($('wipe'), false); show($('pillA'), false); show($('pillB'), false); }
+
+  // captions (left column on 16:9, below the screen on 9:16)
+  const cap = $('cap'), cur = CAPS.find(c => t >= c[0] - 0.05 && t < c[1]);
+  show(cap, !!cur);
+  if (cur) {
+    $('c1').textContent = cur[2]; $('c2').textContent = cur[3];
+    const agentCap = cur[0] === C.agent;
+    set(cap, { left: capPos.x + 'px', top: (agentCap && !V ? 420 : agentCap && V ? 520 : capPos.y) + 'px', fontSize: capPos.fs + 'px', width: (V ? 960 : 560) + 'px' });
+    const inP = P(t, cur[0], 0.5), outP = P(t, cur[1] - 0.25, 0.25);
+    lineIn($('c1'), inP, cur[1] >= DUR ? 0 : outP); lineIn($('c2'), P(t, cur[0] + 0.12, 0.5), cur[1] >= DUR ? 0 : outP);
+  }
+
+  // ---- 6. any TV: the headline, the platforms one per beat ----
+  const anyOn = t >= hit(C.anyTv) && t < C.agent, any = $('any');
+  show(any, anyOn); show($('plats'), anyOn);
+  if (anyOn) {
+    const out = P(t, C.agent - 0.3, 0.3);
+    set(any, { left: '0px', width: W + 'px', textAlign: 'center', top: (V ? 640 : 300) + 'px', fontSize: (V ? 120 : 130) + 'px' });
+    lineIn(any.firstChild.firstChild, P(t, hit(C.anyTv), 0.5), out);
+    PL.forEach((n, i) => {
+      const el = $('pl' + i), p = settle(P(t, hit(C.anyTv) + 0.3 + i * BEAT * 0.5, 0.45));
+      const col = V ? 0 : i, row = V ? i : 0;
+      const x = V ? W / 2 : W * (0.17 + i * 0.22), y = V ? 980 + i * 120 : 620;
+      set(el, { fontSize: (V ? 72 : 58) + 'px', left: '0px', top: '0px', transform: 'translate(' + x + 'px,' + (y + (1 - p) * 40 - out * 40) + 'px) translateX(-50%)',
+        opacity: (p * (1 - out)).toFixed(3), color: i % 2 ? '#8FC7FF' : '#F2F4F6' });
+    });
+  }
+
+  // ---- 6b. the agent: the request types, then the steps check off on the beats ----
+  const termOn = t >= C.agent - 0.2 && t < C.end, tm = $('term');
+  show(tm, termOn);
+  if (termOn) {
+    const enter = settle(P(t, C.agent - 0.2, 0.7)), exit = leave(P(t, hit(C.end) - 0.3, 0.3));
+    const tw = V ? 960 : 1120, tx = V ? 60 : 700, ty = V ? 900 : 300;
+    set(tm, { left: tx + 'px', top: (ty + (1 - enter) * 120 - exit * 60) + 'px', width: tw + 'px', opacity: (enter * (1 - exit)).toFixed(3), fontSize: (V ? 40 : 42) + 'px' });
+    const n = Math.floor(clamp((t - C.agent - 0.1) / 0.042, 0, PROMPT.length));
+    $('typed').textContent = PROMPT.slice(0, n);
+    $('caret').style.opacity = (n < PROMPT.length || Math.floor(t * 2.5) % 2) ? 1 : 0;
+    [0, 1, 2].forEach(k => { const p = settle(P(t, C.agent + BAR + k * BEAT, 0.35)); set($('ok' + k), { opacity: p.toFixed(3), transform: 'translateX(' + ((1 - p) * -30).toFixed(1) + 'px)' }); });
+  }
+
+  // ---- 7. end card: logo again, the promise and the address ----
+  const et = $('endTag'), ur = $('url');
+  show(et, inEnd); show(ur, inEnd);
+  if (inEnd) {
+    const a = settle(P(t, hit(C.end) + 0.8, 0.6)), b = settle(P(t, hit(C.end) + 1.4, 0.6));
+    set(et, { fontSize: (V ? 50 : 44) + 'px', left: '0px', width: W + 'px', textAlign: 'center', top: (hzY + 60) + 'px', opacity: a.toFixed(3), transform: 'translateY(' + ((1 - a) * 24) + 'px)' });
+    set(ur, { fontSize: (V ? 40 : 32) + 'px', left: '0px', width: W + 'px', textAlign: 'center', top: (hzY + (V ? 140 : 124)) + 'px', opacity: b.toFixed(3), transform: 'translateY(' + ((1 - b) * 24) + 'px)' });
+  }
+};
+
+// preload every plate so a seek never waits on decoding
+window.ready = document.fonts.load('800 120px Inter').then(() => Promise.all(plates.map(n => new Promise(res => { const i = new Image(); i.onload = i.onerror = res; i.src = 'plates/' + n + '.png'; })))).then(() => { window.seek(0); return true; });
+</script>
+</body>
+</html>

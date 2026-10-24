@@ -83,6 +83,20 @@ No app, `Intro.java` toca `res/raw/orla_intro.mp4` com o player nativo na primei
 depois que a TV liga (`Settings.Global.BOOT_COUNT`). Em builds debug,
 `am start -n com.tvhome.launcher/.MainActivity --ez play_intro true` força a abertura.
 
+## Vídeo de lançamento (motion/launch/)
+
+`capture.mjs` abre a interface real no navegador e captura as telas em 4K: com a chave do
+TMDB em `.local/launch.env` (`TMDB_KEY=...`, ignorado pelo Git) usa o catálogo real, senão um
+catálogo inventado; os banners dos apps vêm de `art/app-art.json`, lidos da TV por
+`Bridge.getArt`. `score.mjs` sintetiza a trilha (100 BPM) e grava `beats.json`; `launch.html`
+anima as telas como função do tempo; `render.mjs` gera `--sheet` (folha de contato) e o
+filme 16:9 ou 9:16 (`--v`) em 4K a 30 fps.
+
+```bash
+node motion/launch/capture.mjs && node motion/launch/score.mjs
+node motion/launch/render.mjs --sheet && node motion/launch/render.mjs && node motion/launch/render.mjs --v
+```
+
 ## Testes
 
 ```powershell
