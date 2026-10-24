@@ -16,7 +16,11 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: tests/package-lock.json
+      # The runner image ships licenses (e.g. Google TV add-on) the action cannot accept on its own.
       - uses: android-actions/setup-android@v3
+        with:
+          accept-android-sdk-licenses: false
+      - run: yes | sdkmanager --licenses > /dev/null
       - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
       - run: node --check app/src/main/assets/www/app.js
       - run: node tests/catalog.test.cjs
